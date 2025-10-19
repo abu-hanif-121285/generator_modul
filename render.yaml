@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: rpp-smart-creator
+    env: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    autoDeploy: true

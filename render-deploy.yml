@@ -1,0 +1,46 @@
+name: Deploy to Render
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Render Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: |
+          cd frontend && npm ci && cd ..
+          cd backend && npm ci && cd ..
+
+      - name: Build frontend
+        run: |
+          cd frontend && npm run build
+
+      - name: Copy frontend build to backend
+        run: |
+          mkdir -p backend/frontend/dist
+          cp -r frontend/dist/* backend/frontend/dist/
+
+      - name: Login to Render
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          curl -fsSL https://render.com/deploy | bash -s -- --api-key "$RENDER_API_KEY"
+
+      - name: Trigger Deploy on Render
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
+        run: |
+          curl -X POST "https://api.render.com/v1/services/$SERVICE_ID/deploys"           -H "Authorization: Bearer $RENDER_API_KEY"           -H "Accept: application/json"           -d '{}'
